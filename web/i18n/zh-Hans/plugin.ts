@@ -1,4 +1,7 @@
 const translation = {
+  metadata: {
+    title: '插件',
+  },
   category: {
     all: '全部',
     models: '模型',
@@ -205,7 +208,9 @@ const translation = {
     installedError: '{{errorLength}} 个插件安装失败',
     clearAll: '清除所有',
   },
+  requestAPlugin: '申请插件',
   submitPlugin: '上传插件',
+  difyVersionNotCompatible: '当前 Dify 版本不兼容该插件，其最低版本要求为 {{minimalDifyVersion}}',
 }
 
 export default translation

@@ -15,12 +15,16 @@ import type {
   AppMeta,
   ConversationItem,
 } from '@/models/share'
+import { noop } from 'lodash-es'
+import { AccessMode } from '@/models/access-control'
 
 export type ChatWithHistoryContextValue = {
   appInfoError?: any
   appInfoLoading?: boolean
   appMeta?: AppMeta
   appData?: AppData
+  accessMode?: AccessMode
+  userCanAccess?: boolean
   appParams?: ChatConfig
   appChatListDataLoading?: boolean
   currentConversationId: string
@@ -56,38 +60,42 @@ export type ChatWithHistoryContextValue = {
   setIsResponding: (state: boolean) => void,
   currentConversationInputs: Record<string, any> | null,
   setCurrentConversationInputs: (v: Record<string, any>) => void,
+  allInputsHidden: boolean,
 }
 
 export const ChatWithHistoryContext = createContext<ChatWithHistoryContextValue>({
+  accessMode: AccessMode.SPECIFIC_GROUPS_MEMBERS,
+  userCanAccess: false,
   currentConversationId: '',
   appPrevChatTree: [],
   pinnedConversationList: [],
   conversationList: [],
   newConversationInputs: {},
   newConversationInputsRef: { current: {} },
-  handleNewConversationInputsChange: () => {},
+  handleNewConversationInputsChange: noop,
   inputsForms: [],
-  handleNewConversation: () => {},
-  handleStartChat: () => {},
-  handleChangeConversation: () => {},
-  handlePinConversation: () => {},
-  handleUnpinConversation: () => {},
-  handleDeleteConversation: () => {},
+  handleNewConversation: noop,
+  handleStartChat: noop,
+  handleChangeConversation: noop,
+  handlePinConversation: noop,
+  handleUnpinConversation: noop,
+  handleDeleteConversation: noop,
   conversationRenaming: false,
-  handleRenameConversation: () => {},
-  handleNewConversationCompleted: () => {},
+  handleRenameConversation: noop,
+  handleNewConversationCompleted: noop,
   chatShouldReloadKey: '',
   isMobile: false,
   isInstalledApp: false,
-  handleFeedback: () => {},
-  currentChatInstanceRef: { current: { handleStop: () => {} } },
+  handleFeedback: noop,
+  currentChatInstanceRef: { current: { handleStop: noop } },
   sidebarCollapseState: false,
-  handleSidebarCollapse: () => {},
+  handleSidebarCollapse: noop,
   clearChatList: false,
-  setClearChatList: () => {},
+  setClearChatList: noop,
   isResponding: false,
-  setIsResponding: () => {},
+  setIsResponding: noop,
   currentConversationInputs: {},
-  setCurrentConversationInputs: () => {},
+  setCurrentConversationInputs: noop,
+  allInputsHidden: false,
 })
 export const useChatWithHistoryContext = () => useContext(ChatWithHistoryContext)

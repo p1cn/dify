@@ -1,18 +1,17 @@
-import React, { useEffect } from 'react'
-import { useShallow } from 'zustand/react/shallow'
-import { RiLayoutRight2Line } from '@remixicon/react'
-import { LayoutRight2LineMod } from '../base/icons/src/public/knowledge'
-import NavLink from './navLink'
-import type { NavIcon } from './navLink'
-import AppBasic from './basic'
-import AppInfo from './app-info'
-import DatasetInfo from './dataset-info'
-import useBreakpoints, { MediaType } from '@/hooks/use-breakpoints'
-import { useStore as useAppStore } from '@/app/components/app/store'
-import cn from '@/utils/classnames'
+import React, { useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { RiLayoutLeft2Line, RiLayoutRight2Line } from "@remixicon/react";
+import NavLink from "./navLink";
+import type { NavIcon } from "./navLink";
+import AppBasic from "./basic";
+import AppInfo from "./app-info";
+import DatasetInfo from "./dataset-info";
+import useBreakpoints, { MediaType } from "@/hooks/use-breakpoints";
+import { useStore as useAppStore } from "@/app/components/app/store";
+import cn from "@/utils/classnames";
 
 export type IAppDetailNavProps = {
-  iconType?: 'app' | 'dataset' | 'notion';
+  iconType?: "app" | "dataset" | "notion";
   title: string;
   desc: string;
   isExternal?: boolean;
@@ -25,7 +24,7 @@ export type IAppDetailNavProps = {
     selectedIcon: NavIcon;
   }>;
   extraInfo?: (modeState: string) => React.ReactNode;
-}
+};
 
 const AppDetailNav = ({
   title,
@@ -35,44 +34,44 @@ const AppDetailNav = ({
   icon_background,
   navigation,
   extraInfo,
-  iconType = 'app',
+  iconType = "app",
 }: IAppDetailNavProps) => {
   const { appSidebarExpand, setAppSiderbarExpand } = useAppStore(
-    useShallow(state => ({
+    useShallow((state) => ({
       appSidebarExpand: state.appSidebarExpand,
       setAppSiderbarExpand: state.setAppSiderbarExpand,
-    })),
-  )
-  const media = useBreakpoints()
-  const isMobile = media === MediaType.mobile
-  const expand = appSidebarExpand === 'expand'
+    }))
+  );
+  const media = useBreakpoints();
+  const isMobile = media === MediaType.mobile;
+  const expand = appSidebarExpand === "expand";
 
   const handleToggle = (state: string) => {
-    setAppSiderbarExpand(state === 'expand' ? 'collapse' : 'expand')
-  }
+    setAppSiderbarExpand(state === "expand" ? "collapse" : "expand");
+  };
 
   useEffect(() => {
     if (appSidebarExpand) {
-      localStorage.setItem('app-detail-collapse-or-expand', appSidebarExpand)
-      setAppSiderbarExpand(appSidebarExpand)
+      localStorage.setItem("app-detail-collapse-or-expand", appSidebarExpand);
+      setAppSiderbarExpand(appSidebarExpand);
     }
-  }, [appSidebarExpand, setAppSiderbarExpand])
+  }, [appSidebarExpand, setAppSiderbarExpand]);
 
   return (
     <div
       className={`
         flex shrink-0 flex-col border-r border-divider-burn bg-background-default-subtle transition-all
-        ${expand ? 'w-[340px]' : 'w-14'}
+        ${expand ? "w-[340px]" : "w-14"}
       `}
     >
       <div
         className={`
           shrink-0
-          ${expand ? 'p-2' : 'p-1'}
+          ${expand ? "p-2" : "p-1"}
         `}
       >
-        {iconType === 'app' && <AppInfo expand={expand} />}
-        {iconType === 'dataset' && (
+        {iconType === "app" && <AppInfo expand={expand} />}
+        {iconType === "dataset" && (
           <DatasetInfo
             name={title}
             description={desc}
@@ -81,7 +80,7 @@ const AppDetailNav = ({
             extraInfo={extraInfo && extraInfo(appSidebarExpand)}
           />
         )}
-        {!['app', 'dataset'].includes(iconType) && (
+        {!["app", "dataset"].includes(iconType) && (
           <AppBasic
             mode={appSidebarExpand}
             iconType={iconType}
@@ -96,15 +95,15 @@ const AppDetailNav = ({
       <div className="px-4">
         <div
           className={cn(
-            'mx-auto mt-1 h-[1px] bg-divider-subtle',
-            !expand && 'w-6',
+            "mx-auto mt-1 h-[1px] bg-divider-subtle",
+            !expand && "w-6"
           )}
         />
       </div>
       <nav
         className={`
           grow space-y-1
-          ${expand ? 'p-4' : 'px-2.5 py-4'}
+          ${expand ? "p-4" : "px-2.5 py-4"}
         `}
       >
         {navigation.map((item, index) => {
@@ -116,30 +115,35 @@ const AppDetailNav = ({
               name={item.name}
               href={item.href}
             />
-          )
+          );
         })}
       </nav>
       {!isMobile && (
         <div
           className={`
               shrink-0 py-3
-              ${expand ? 'px-6' : 'px-4'}
+              ${expand ? "px-6" : "px-4"}
             `}
         >
           <div
             className="flex h-6 w-6 cursor-pointer items-center justify-center text-gray-500"
             onClick={() => handleToggle(appSidebarExpand)}
           >
-            {expand ? (
-              <RiLayoutRight2Line className="h-5 w-5 text-components-menu-item-text" />
-            ) : (
-              <LayoutRight2LineMod className="h-5 w-5 text-components-menu-item-text" />
-            )}
+            <div
+              className="flex h-6 w-6 cursor-pointer items-center justify-center"
+              onClick={() => handleToggle(appSidebarExpand)}
+            >
+              {expand ? (
+                <RiLayoutRight2Line className="h-5 w-5 text-components-menu-item-text" />
+              ) : (
+                <RiLayoutLeft2Line className="h-5 w-5 text-components-menu-item-text" />
+              )}
+            </div>
           </div>
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default React.memo(AppDetailNav)
+export default React.memo(AppDetailNav);

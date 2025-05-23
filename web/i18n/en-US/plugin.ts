@@ -1,4 +1,7 @@
 const translation = {
+  metadata: {
+    title: 'Plugins',
+  },
   category: {
     all: 'All',
     models: 'Models',
@@ -205,7 +208,9 @@ const translation = {
     installedError: '{{errorLength}} plugins failed to install',
     clearAll: 'Clear all',
   },
+  requestAPlugin: 'Request a plugin',
   submitPlugin: 'Submit plugin',
+  difyVersionNotCompatible: 'The current Dify version is not compatible with this plugin, please upgrade to the minimum version required: {{minimalDifyVersion}}',
 }
 
 export default translation

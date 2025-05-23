@@ -82,6 +82,9 @@ import { Row, Col, Properties, Property, Heading, SubProperty, Paragraph } from 
 
     ### ChatCompletionResponse
     完全なアプリ結果を返します。`Content-Type`は`application/json`です。
+    - `event` (string) イベントタイプ、固定で `message`
+    - `task_id` (string) タスクID、リクエスト追跡と以下のStop Generate APIに使用
+    - `id` (string) ユニークID
     - `message_id` (string) 一意のメッセージID
     - `conversation_id` (string) 会話ID
     - `mode` (string) アプリモード、`chat`として固定
@@ -197,6 +200,8 @@ import { Row, Col, Properties, Property, Heading, SubProperty, Paragraph } from 
     ```json {{ title: '応答' }}
     {
         "event": "message",
+        "task_id": "c3800678-a077-43df-a102-53f23ed20b88", 
+        "id": "9da23599-e713-473b-982c-4328d4f5c78a",
         "message_id": "9da23599-e713-473b-982c-4328d4f5c78a",
         "conversation_id": "45701982-8118-4bc5-8e9b-64562b4555f2",
         "mode": "chat",
@@ -310,7 +315,7 @@ import { Row, Col, Properties, Property, Heading, SubProperty, Paragraph } from 
   </Col>
   <Col sticky>
   ### リクエスト例
-  <CodeGroup title="リクエスト" tag="POST" label="/files/upload" targetCode={`curl -X POST '${props.appDetail.api_base_url}/files/upload' \\\n--header 'Authorization: Bearer {api_key}' \\\n--form 'file=@localfile;type=image/[png|jpeg|jpg|webp|gif] \\\n--form 'user=abc-123'`}>
+  <CodeGroup title="リクエスト" tag="POST" label="/files/upload" targetCode={`curl -X POST '${props.appDetail.api_base_url}/files/upload' \\\n--header 'Authorization: Bearer {api_key}' \\\n--form 'file=@localfile;type=image/[png|jpeg|jpg|webp|gif]' \\\n--form 'user=abc-123'`}>
 
     ```bash {{ title: 'cURL' }}
     curl -X POST '${props.appDetail.api_base_url}/files/upload' \
@@ -446,6 +451,70 @@ import { Row, Col, Properties, Property, Heading, SubProperty, Paragraph } from 
 ---
 
 <Heading
+  url='/app/feedbacks'
+  method='GET'
+  title='アプリのメッセージの「いいね」とフィードバックを取得'
+  name='#app-feedbacks'
+/>
+<Row>
+  <Col>
+    アプリのエンドユーザーからのフィードバックや「いいね」を取得します。
+
+    ### クエリ
+    <Properties>
+      <Property name='page' type='string' key='page'>
+       （任意）ページ番号。デフォルト値：1
+      </Property>
+    </Properties>
+
+    <Properties>
+      <Property name='limit' type='string' key='limit'>
+       （任意）1ページあたりの件数。デフォルト値：20
+      </Property>
+    </Properties>
+
+    ### レスポンス
+    - `data` (リスト) このアプリの「いいね」とフィードバックの一覧を返します。
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="GET" label="/app/feedbacks" targetCode={`curl -X GET '${props.appDetail.api_base_url}/app/feedbacks?page=1&limit=20'`}>
+
+    ```bash {{ title: 'cURL' }}
+    curl -X GET '${props.appDetail.api_base_url}/app/feedbacks?page=1&limit=20' \
+    --header 'Authorization: Bearer {api_key}' \
+    --header 'Content-Type: application/json'
+    ```
+
+    </CodeGroup>
+
+    <CodeGroup title="Response">
+    ```json {{ title: 'Response' }}
+        {
+        "data": [
+            {
+                "id": "8c0fbed8-e2f9-49ff-9f0e-15a35bdd0e25",
+                "app_id": "f252d396-fe48-450e-94ec-e184218e7346",
+                "conversation_id": "2397604b-9deb-430e-b285-4726e51fd62d",
+                "message_id": "709c0b0f-0a96-4a4e-91a4-ec0889937b11",
+                "rating": "like",
+                "content": "message feedback information-3",
+                "from_source": "user",
+                "from_end_user_id": "74286412-9a1a-42c1-929c-01edb1d381d5",
+                "from_account_id": null,
+                "created_at": "2025-04-24T09:24:38",
+                "updated_at": "2025-04-24T09:24:38"
+            }
+        ]
+        }
+    ```
+    </CodeGroup>
+  </Col>
+</Row>
+---
+
+
+<Heading
   url='/messages/{message_id}/suggested'
   method='GET'
   title='次の推奨質問'
@@ -530,33 +599,33 @@ import { Row, Col, Properties, Property, Heading, SubProperty, Paragraph } from 
 
     ### 応答
     - `data` (array[object]) メッセージリスト
-    - `id` (string) メッセージID
-    - `conversation_id` (string) 会話ID
-    - `inputs` (object) ユーザー入力パラメータ。
-    - `query` (string) ユーザー入力/質問内容。
-    - `message_files` (array[object]) メッセージファイル
-      - `id` (string) ID
-      - `type` (string) ファイルタイプ、画像の場合はimage
-      - `url` (string) プレビュー画像URL
-      - `belongs_to` (string) 所属、ユーザーまたはアシスタント
-    - `agent_thoughts` (array[object]) エージェントの思考（基本アシスタントの場合は空）
-      - `id` (string) エージェント思考ID、各反復には一意のエージェント思考IDがあります
-      - `message_id` (string) 一意のメッセージID
-      - `position` (int) 現在のエージェント思考の位置、各メッセージには順番に複数の思考が含まれる場合があります。
-      - `thought` (string) LLMが考えていること
-      - `observation` (string) ツール呼び出しからの応答
-      - `tool` (string) 呼び出されたツールのリスト、;で区切られます
-      - `tool_input` (string) ツールの入力、JSON形式。例：`{"dalle3": {"prompt": "a cute cat"}}`。
-      - `created_at` (int) 作成タイムスタンプ、例：1705395332
-      - `message_files` (array[string]) message_fileイベントを参照
-        - `file_id` (string) ファイルID
-    - `answer` (string) 応答メッセージ内容
-    - `created_at` (timestamp) 作成タイムスタンプ、例：1705395332
-    - `feedback` (object) フィードバック情報
-      - `rating` (string) アップボートは`like` / ダウンボートは`dislike`
-    - `retriever_resources` (array[RetrieverResource]) 引用と帰属リスト
-  - `has_more` (bool) 次のページがあるかどうか
-  - `limit` (int) 返されたアイテムの数、入力がシステム制限を超える場合、システム制限の数を返します
+      - `id` (string) メッセージID
+      - `conversation_id` (string) 会話ID
+      - `inputs` (object) ユーザー入力パラメータ。
+      - `query` (string) ユーザー入力/質問内容。
+      - `message_files` (array[object]) メッセージファイル
+        - `id` (string) ID
+        - `type` (string) ファイルタイプ、画像の場合はimage
+        - `url` (string) プレビュー画像URL
+        - `belongs_to` (string) 所属、ユーザーまたはアシスタント
+      - `agent_thoughts` (array[object]) エージェントの思考（基本アシスタントの場合は空）
+        - `id` (string) エージェント思考ID、各反復には一意のエージェント思考IDがあります
+        - `message_id` (string) 一意のメッセージID
+        - `position` (int) 現在のエージェント思考の位置、各メッセージには順番に複数の思考が含まれる場合があります。
+        - `thought` (string) LLMが考えていること
+        - `observation` (string) ツール呼び出しからの応答
+        - `tool` (string) 呼び出されたツールのリスト、;で区切られます
+        - `tool_input` (string) ツールの入力、JSON形式。例：`{"dalle3": {"prompt": "a cute cat"}}`。
+        - `created_at` (int) 作成タイムスタンプ、例：1705395332
+        - `message_files` (array[string]) message_fileイベントを参照
+          - `file_id` (string) ファイルID
+      - `answer` (string) 応答メッセージ内容
+      - `created_at` (timestamp) 作成タイムスタンプ、例：1705395332
+      - `feedback` (object) フィードバック情報
+        - `rating` (string) アップボートは`like` / ダウンボートは`dislike`
+      - `retriever_resources` (array[RetrieverResource]) 引用と帰属リスト
+    - `has_more` (bool) 次のページがあるかどうか
+    - `limit` (int) 返されたアイテムの数、入力がシステム制限を超える場合、システム制限の数を返します
 
   </Col>
   <Col sticky>
@@ -792,10 +861,8 @@ import { Row, Col, Properties, Property, Heading, SubProperty, Paragraph } from 
     </CodeGroup>
 
     <CodeGroup title="応答">
-    ```json {{ title: '応答' }}
-    {
-      "result": "success"
-    }
+    ```text {{ title: '応答' }}
+    204 No Content
     ```
     </CodeGroup>
   </Col>
@@ -863,6 +930,106 @@ import { Row, Col, Properties, Property, Heading, SubProperty, Paragraph } from 
         "introduction": "",
         "created_at": 1705569238,
         "updated_at": 1705569238
+    }
+    ```
+    </CodeGroup>
+  </Col>
+</Row>
+
+---
+
+<Heading
+  url='/conversations/:conversation_id/variables'
+  method='GET'
+  title='会話変数の取得'
+  name='#conversation-variables'
+/>
+<Row>
+  <Col>
+    特定の会話から変数を取得します。このエンドポイントは、会話中に取得された構造化データを抽出するのに役立ちます。
+
+    ### パスパラメータ
+
+    <Properties>
+      <Property name='conversation_id' type='string' key='conversation_id'>
+        変数を取得する会話のID。
+      </Property>
+    </Properties>
+
+    ### クエリパラメータ
+
+    <Properties>
+      <Property name='user' type='string' key='user'>
+        ユーザー識別子。開発者によって定義されたルールに従い、アプリケーション内で一意である必要があります。
+      </Property>
+      <Property name='last_id' type='string' key='last_id'>
+          (Optional)現在のページの最後のレコードのID、デフォルトはnullです。
+      </Property>
+      <Property name='limit' type='int' key='limit'>
+          (Optional)1回のリクエストで返すレコードの数、デフォルトは最新の20件です。最大100、最小1。
+      </Property>
+    </Properties>
+
+    ### レスポンス
+
+    - `limit` (int) ページごとのアイテム数
+    - `has_more` (bool) さらにアイテムがあるかどうか
+    - `data` (array[object]) 変数のリスト
+      - `id` (string) 変数ID
+      - `name` (string) 変数名
+      - `value_type` (string) 変数タイプ（文字列、数値、真偽値など）
+      - `value` (string) 変数値
+      - `description` (string) 変数の説明
+      - `created_at` (int) 作成タイムスタンプ
+      - `updated_at` (int) 最終更新タイムスタンプ
+
+    ### エラー
+    - 404, `conversation_not_exists`, 会話が見つかりません
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="GET" label="/conversations/:conversation_id/variables" targetCode={`curl -X GET '${props.appDetail.api_base_url}/conversations/{conversation_id}/variables?user=abc-123' \\\n--header 'Authorization: Bearer {api_key}'`}>
+
+    ```bash {{ title: 'cURL' }}
+    curl -X GET '${props.appDetail.api_base_url}/conversations/{conversation_id}/variables?user=abc-123' \
+    --header 'Authorization: Bearer {api_key}'
+    ```
+
+    </CodeGroup>
+
+    <CodeGroup title="Request with variable name filter">
+    ```bash {{ title: 'cURL' }}
+    curl -X GET '${props.appDetail.api_base_url}/conversations/{conversation_id}/variables?user=abc-123&variable_name=customer_name' \
+    --header 'Authorization: Bearer {api_key}'
+    ```
+    </CodeGroup>
+
+    <CodeGroup title="Response">
+    ```json {{ title: 'Response' }}
+    {
+      "limit": 100,
+      "has_more": false,
+      "data": [
+        {
+          "id": "variable-uuid-1",
+          "name": "customer_name",
+          "value_type": "string",
+          "value": "John Doe",
+          "description": "会話から抽出された顧客名",
+          "created_at": 1650000000000,
+          "updated_at": 1650000000000
+        },
+        {
+          "id": "variable-uuid-2",
+          "name": "order_details",
+          "value_type": "json",
+          "value": "{\"product\":\"Widget\",\"quantity\":5,\"price\":19.99}",
+          "description": "顧客の注文詳細",
+          "created_at": 1650000000000,
+          "updated_at": 1650000000000
+        }
+      ]
     }
     ```
     </CodeGroup>
@@ -1025,6 +1192,13 @@ import { Row, Col, Properties, Property, Heading, SubProperty, Paragraph } from 
       - `enabled` (bool) 有効かどうか
     - `speech_to_text` (object) 音声からテキストへ
       - `enabled` (bool) 有効かどうか
+    - `text_to_speech` (object) テキストから音声へ
+      - `enabled` (bool) 有効かどうか
+      - `voice` (string) 音声タイプ
+      - `language` (string) 言語
+      - `autoPlay` (string) 自動再生
+        - `enabled`  有効
+        - `disabled` 無効
     - `retriever_resource` (object) 引用と帰属
       - `enabled` (bool) 有効かどうか
     - `annotation_reply` (object) 注釈返信
@@ -1079,6 +1253,12 @@ import { Row, Col, Properties, Property, Heading, SubProperty, Paragraph } from 
       },
       "speech_to_text": {
           "enabled": true
+      },
+      "text_to_speech": {
+          "enabled": true,
+          "voice": "sambert-zhinan-v1",
+          "language": "zh-Hans",
+          "autoPlay": "disabled"
       },
       "retriever_resource": {
           "enabled": true
@@ -1163,3 +1343,63 @@ import { Row, Col, Properties, Property, Heading, SubProperty, Paragraph } from 
     </CodeGroup>
   </Col>
 </Row>
+
+---
+
+<Heading
+  url='/site'
+  method='GET'
+  title='アプリのWebApp設定を取得'
+  name='#site'
+/>
+<Row>
+  <Col>
+  アプリのWebApp設定を取得するために使用します。
+  ### 応答
+  - `title` (string) WebApp名
+  - `chat_color_theme` (string) チャットの色テーマ、16進数形式
+  - `chat_color_theme_inverted` (bool) チャットの色テーマを反転するかどうか
+  - `icon_type` (string) アイコンタイプ、`emoji`-絵文字、`image`-画像
+  - `icon` (string) アイコン。`emoji`タイプの場合は絵文字、`image`タイプの場合は画像URL
+  - `icon_background` (string) 16進数形式の背景色
+  - `icon_url` (string) アイコンのURL
+  - `description` (string) 説明
+  - `copyright` (string) 著作権情報
+  - `privacy_policy` (string) プライバシーポリシーのリンク
+  - `custom_disclaimer` (string) カスタム免責事項
+  - `default_language` (string) デフォルト言語
+  - `show_workflow_steps` (bool) ワークフローの詳細を表示するかどうか
+  - `use_icon_as_answer_icon` (bool) WebAppのアイコンをチャット内の🤖に置き換えるかどうか
+  </Col>
+  <Col>
+  <CodeGroup title="Request" tag="POST" label="/meta" targetCode={`curl -X GET '${props.appDetail.api_base_url}/site' \\\n-H 'Authorization: Bearer {api_key}'`}>
+    ```bash {{ title: 'cURL' }}
+    curl -X GET '${props.appDetail.api_base_url}/site' \
+    -H 'Authorization: Bearer {api_key}'
+    ```
+
+    </CodeGroup>
+
+    <CodeGroup title="Response">
+    ```json {{ title: 'Response' }}
+    {
+      "title": "My App",
+      "chat_color_theme": "#ff4a4a",
+      "chat_color_theme_inverted": false,
+      "icon_type": "emoji",
+      "icon": "😄",
+      "icon_background": "#FFEAD5",
+      "icon_url": null,
+      "description": "This is my app.",
+      "copyright": "all rights reserved",
+      "privacy_policy": "",
+      "custom_disclaimer": "All generated by AI",
+      "default_language": "en-US",
+      "show_workflow_steps": false,
+      "use_icon_as_answer_icon": false,
+    }
+    ```
+    </CodeGroup>
+  </Col>
+</Row>
+___
