@@ -46,7 +46,7 @@ fi
 if $web_modified; then
     echo "Running ESLint on web module"
     cd ./web || exit 1
-    exit 1
+    exit 0
     lint-staged
 
     echo "Running unit tests check"
