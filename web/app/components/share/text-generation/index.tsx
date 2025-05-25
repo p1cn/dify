@@ -2,7 +2,6 @@
 import type { FC } from "react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RiErrorWarningFill } from "@remixicon/react";
 import { useBoolean, useClickAway } from "ahooks";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -16,15 +15,7 @@ import cn from "@/utils/classnames";
 import useBreakpoints, { MediaType } from "@/hooks/use-breakpoints";
 import RunOnce from "@/app/components/share/text-generation/run-once";
 import { RiBookmark3Line, RiErrorWarningFill } from "@remixicon/react";
-import { useBoolean } from "ahooks";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import TabHeader from "../../base/tab-header";
-import { checkOrSetAccessToken } from "../utils";
 import MenuDropdown from "./menu-dropdown";
-import RunBatch from "./run-batch";
-import ResDownload from "./run-batch/res-download";
-import useBreakpoints, { MediaType } from "@/hooks/use-breakpoints";
-import RunOnce from "@/app/components/share/text-generation/run-once";
 import {
   fetchSavedMessage as doFetchSavedMessage,
   fetchAppInfo,
@@ -53,7 +44,6 @@ import type { VisionFile, VisionSettings } from "@/types/app";
 import { Resolution, TransferMethod } from "@/types/app";
 import { useAppFavicon } from "@/hooks/use-app-favicon";
 import LogoSite from "@/app/components/base/logo/logo-site";
-import cn from "@/utils/classnames";
 
 const GROUP_SIZE = 20; // to avoid RPM(Request per minute) limit. The group task finished then the next group.
 enum TaskStatus {
