@@ -30,8 +30,6 @@ RUN uv sync --locked
 # production stage
 FROM base AS production
 
-ENV http_proxy=""
-ENV https_proxy=""
 ENV FLASK_APP=app.py
 ENV EDITION=SELF_HOSTED
 ENV DEPLOY_ENV=PRODUCTION

@@ -50,7 +50,7 @@ import { AccessMode } from "@/models/access-control";
 import { useGlobalPublicStore } from "@/context/global-public-context";
 import useDocumentTitle from "@/hooks/use-document-title";
 
-const GROUP_SIZE = 100; // to avoid RPM(Request per minute) limit. The group task finished then the next group.
+const GROUP_SIZE = 20; // to avoid RPM(Request per minute) limit. The group task finished then the next group.
 enum TaskStatus {
   pending = "pending",
   running = "running",
