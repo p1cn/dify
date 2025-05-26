@@ -9,7 +9,7 @@ ENV http_proxy="http://10.10.1.81:2345"
 ENV https_proxy="http://10.10.1.81:2345"
 
 RUN  apk add --no-cache tzdata
-RUN npm install -g pnpm@10.8.0
+RUN npm install -g pnpm@8.15.9
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
