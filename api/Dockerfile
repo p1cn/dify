@@ -6,6 +6,12 @@ WORKDIR /app/api
 # Install uv
 ENV UV_VERSION=0.6.14
 
+ENV http_proxy="http://10.10.1.81:2345"
+ENV https_proxy="http://10.10.1.81:2345"
+
+# if you located in China, you can use aliyun mirror to speed up
+# RUN pip install --no-cache-dir poetry==${POETRY_VERSION} -i https://mirrors.aliyun.com/pypi/simple/
+
 RUN pip install --no-cache-dir uv==${UV_VERSION}
 
 
@@ -43,14 +49,14 @@ RUN \
     apt-get update \
     # Install dependencies
     && apt-get install -y --no-install-recommends \
-        # basic environment
-        curl nodejs libgmp-dev libmpfr-dev libmpc-dev \
-        # For Security
-        expat libldap-2.5-0 perl libsqlite3-0 zlib1g \
-        # install a package to improve the accuracy of guessing mime type and file extension
-        media-types \
-        # install libmagic to support the use of python-magic guess MIMETYPE
-        libmagic1 \
+    # basic environment
+    curl nodejs libgmp-dev libmpfr-dev libmpc-dev \
+    # For Security
+    expat libldap-2.5-0 perl libsqlite3-0 zlib1g \
+    # install a package to improve the accuracy of guessing mime type and file extension
+    media-types \
+    # install libmagic to support the use of python-magic guess MIMETYPE
+    libmagic1 \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
