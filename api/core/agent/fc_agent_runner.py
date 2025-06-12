@@ -6,7 +6,11 @@ from typing import Any, Optional, Union
 
 from core.agent.base_agent_runner import BaseAgentRunner
 from core.app.apps.base_app_queue_manager import PublishFrom
-from core.app.entities.queue_entities import QueueAgentThoughtEvent, QueueMessageEndEvent, QueueMessageFileEvent
+from core.app.entities.queue_entities import (
+    QueueAgentThoughtEvent,
+    QueueMessageEndEvent,
+    QueueMessageFileEvent,
+)
 from core.file import file_manager
 from core.model_runtime.entities import (
     AssistantPromptMessage,
@@ -21,7 +25,10 @@ from core.model_runtime.entities import (
     ToolPromptMessage,
     UserPromptMessage,
 )
-from core.model_runtime.entities.message_entities import ImagePromptMessageContent, PromptMessageContentUnionTypes
+from core.model_runtime.entities.message_entities import (
+    ImagePromptMessageContent,
+    PromptMessageContentUnionTypes,
+)
 from core.prompt.agent_history_prompt_transform import AgentHistoryPromptTransform
 from core.tools.entities.tool_entities import ToolInvokeMeta
 from core.tools.tool_engine import ToolEngine
@@ -31,7 +38,9 @@ logger = logging.getLogger(__name__)
 
 
 class FunctionCallAgentRunner(BaseAgentRunner):
-    def run(self, message: Message, query: str, **kwargs: Any) -> Generator[LLMResultChunk, None, None]:
+    def run(
+        self, message: Message, query: str, **kwargs: Any
+    ) -> Generator[LLMResultChunk, None, None]:
         """
         Run FunctionCall agent application
         """
@@ -48,7 +57,7 @@ class FunctionCallAgentRunner(BaseAgentRunner):
         assert app_config.agent
 
         iteration_step = 1
-        max_iteration_steps = min(app_config.agent.max_iteration, 5) + 1
+        max_iteration_steps = max(app_config.agent.max_iteration, 5) + 1
 
         # continue to run until there is not any tool call
         function_call_state = True
@@ -58,7 +67,9 @@ class FunctionCallAgentRunner(BaseAgentRunner):
         # get tracing instance
         trace_manager = app_generate_entity.trace_manager
 
-        def increase_usage(final_llm_usage_dict: dict[str, Optional[LLMUsage]], usage: LLMUsage):
+        def increase_usage(
+            final_llm_usage_dict: dict[str, Optional[LLMUsage]], usage: LLMUsage
+        ):
             if not final_llm_usage_dict["usage"]:
                 final_llm_usage_dict["usage"] = usage
             else:
@@ -81,21 +92,27 @@ class FunctionCallAgentRunner(BaseAgentRunner):
 
             message_file_ids: list[str] = []
             agent_thought = self.create_agent_thought(
-                message_id=message.id, message="", tool_name="", tool_input="", messages_ids=message_file_ids
+                message_id=message.id,
+                message="",
+                tool_name="",
+                tool_input="",
+                messages_ids=message_file_ids,
             )
 
             # recalc llm max tokens
             prompt_messages = self._organize_prompt_messages()
             self.recalc_llm_max_tokens(self.model_config, prompt_messages)
             # invoke model
-            chunks: Union[Generator[LLMResultChunk, None, None], LLMResult] = model_instance.invoke_llm(
-                prompt_messages=prompt_messages,
-                model_parameters=app_generate_entity.model_conf.parameters,
-                tools=prompt_messages_tools,
-                stop=app_generate_entity.model_conf.stop,
-                stream=self.stream_tool_call,
-                user=self.user_id,
-                callbacks=[],
+            chunks: Union[Generator[LLMResultChunk, None, None], LLMResult] = (
+                model_instance.invoke_llm(
+                    prompt_messages=prompt_messages,
+                    model_parameters=app_generate_entity.model_conf.parameters,
+                    tools=prompt_messages_tools,
+                    stop=app_generate_entity.model_conf.stop,
+                    stream=self.stream_tool_call,
+                    user=self.user_id,
+                    callbacks=[],
+                )
             )
 
             tool_calls: list[tuple[str, str, dict[str, Any]]] = []
@@ -114,21 +131,30 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                 for chunk in chunks:
                     if is_first_chunk:
                         self.queue_manager.publish(
-                            QueueAgentThoughtEvent(agent_thought_id=agent_thought.id), PublishFrom.APPLICATION_MANAGER
+                            QueueAgentThoughtEvent(agent_thought_id=agent_thought.id),
+                            PublishFrom.APPLICATION_MANAGER,
                         )
                         is_first_chunk = False
                     # check if there is any tool call
                     if self.check_tool_calls(chunk):
                         function_call_state = True
                         tool_calls.extend(self.extract_tool_calls(chunk) or [])
-                        tool_call_names = ";".join([tool_call[1] for tool_call in tool_calls])
+                        tool_call_names = ";".join(
+                            [tool_call[1] for tool_call in tool_calls]
+                        )
                         try:
                             tool_call_inputs = json.dumps(
-                                {tool_call[1]: tool_call[2] for tool_call in tool_calls}, ensure_ascii=False
+                                {
+                                    tool_call[1]: tool_call[2]
+                                    for tool_call in tool_calls
+                                },
+                                ensure_ascii=False,
                             )
                         except json.JSONDecodeError:
                             # ensure ascii to avoid encoding error
-                            tool_call_inputs = json.dumps({tool_call[1]: tool_call[2] for tool_call in tool_calls})
+                            tool_call_inputs = json.dumps(
+                                {tool_call[1]: tool_call[2] for tool_call in tool_calls}
+                            )
 
                     if chunk.delta.message and chunk.delta.message.content:
                         if isinstance(chunk.delta.message.content, list):
@@ -148,14 +174,19 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                 if self.check_blocking_tool_calls(result):
                     function_call_state = True
                     tool_calls.extend(self.extract_blocking_tool_calls(result) or [])
-                    tool_call_names = ";".join([tool_call[1] for tool_call in tool_calls])
+                    tool_call_names = ";".join(
+                        [tool_call[1] for tool_call in tool_calls]
+                    )
                     try:
                         tool_call_inputs = json.dumps(
-                            {tool_call[1]: tool_call[2] for tool_call in tool_calls}, ensure_ascii=False
+                            {tool_call[1]: tool_call[2] for tool_call in tool_calls},
+                            ensure_ascii=False,
                         )
                     except json.JSONDecodeError:
                         # ensure ascii to avoid encoding error
-                        tool_call_inputs = json.dumps({tool_call[1]: tool_call[2] for tool_call in tool_calls})
+                        tool_call_inputs = json.dumps(
+                            {tool_call[1]: tool_call[2] for tool_call in tool_calls}
+                        )
 
                 if result.usage:
                     increase_usage(llm_usage, result.usage)
@@ -172,7 +203,8 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                     result.message.content = ""
 
                 self.queue_manager.publish(
-                    QueueAgentThoughtEvent(agent_thought_id=agent_thought.id), PublishFrom.APPLICATION_MANAGER
+                    QueueAgentThoughtEvent(agent_thought_id=agent_thought.id),
+                    PublishFrom.APPLICATION_MANAGER,
                 )
 
                 yield LLMResultChunk(
@@ -193,7 +225,8 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                         id=tool_call[0],
                         type="function",
                         function=AssistantPromptMessage.ToolCall.ToolCallFunction(
-                            name=tool_call[1], arguments=json.dumps(tool_call[2], ensure_ascii=False)
+                            name=tool_call[1],
+                            arguments=json.dumps(tool_call[2], ensure_ascii=False),
                         ),
                     )
                     for tool_call in tool_calls
@@ -216,7 +249,8 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                 llm_usage=current_llm_usage,
             )
             self.queue_manager.publish(
-                QueueAgentThoughtEvent(agent_thought_id=agent_thought.id), PublishFrom.APPLICATION_MANAGER
+                QueueAgentThoughtEvent(agent_thought_id=agent_thought.id),
+                PublishFrom.APPLICATION_MANAGER,
             )
 
             final_answer += response + "\n"
@@ -230,28 +264,33 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                         "tool_call_id": tool_call_id,
                         "tool_call_name": tool_call_name,
                         "tool_response": f"there is not a tool named {tool_call_name}",
-                        "meta": ToolInvokeMeta.error_instance(f"there is not a tool named {tool_call_name}").to_dict(),
+                        "meta": ToolInvokeMeta.error_instance(
+                            f"there is not a tool named {tool_call_name}"
+                        ).to_dict(),
                     }
                 else:
                     # invoke tool
-                    tool_invoke_response, message_files, tool_invoke_meta = ToolEngine.agent_invoke(
-                        tool=tool_instance,
-                        tool_parameters=tool_call_args,
-                        user_id=self.user_id,
-                        tenant_id=self.tenant_id,
-                        message=self.message,
-                        invoke_from=self.application_generate_entity.invoke_from,
-                        agent_tool_callback=self.agent_callback,
-                        trace_manager=trace_manager,
-                        app_id=self.application_generate_entity.app_config.app_id,
-                        message_id=self.message.id,
-                        conversation_id=self.conversation.id,
+                    tool_invoke_response, message_files, tool_invoke_meta = (
+                        ToolEngine.agent_invoke(
+                            tool=tool_instance,
+                            tool_parameters=tool_call_args,
+                            user_id=self.user_id,
+                            tenant_id=self.tenant_id,
+                            message=self.message,
+                            invoke_from=self.application_generate_entity.invoke_from,
+                            agent_tool_callback=self.agent_callback,
+                            trace_manager=trace_manager,
+                            app_id=self.application_generate_entity.app_config.app_id,
+                            message_id=self.message.id,
+                            conversation_id=self.conversation.id,
+                        )
                     )
                     # publish files
                     for message_file_id in message_files:
                         # publish message file
                         self.queue_manager.publish(
-                            QueueMessageFileEvent(message_file_id=message_file_id), PublishFrom.APPLICATION_MANAGER
+                            QueueMessageFileEvent(message_file_id=message_file_id),
+                            PublishFrom.APPLICATION_MANAGER,
                         )
                         # add message file ids
                         message_file_ids.append(message_file_id)
@@ -281,7 +320,8 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                     tool_input="",
                     thought="",
                     tool_invoke_meta={
-                        tool_response["tool_call_name"]: tool_response["meta"] for tool_response in tool_responses
+                        tool_response["tool_call_name"]: tool_response["meta"]
+                        for tool_response in tool_responses
                     },
                     observation={
                         tool_response["tool_call_name"]: tool_response["tool_response"]
@@ -291,12 +331,15 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                     messages_ids=message_file_ids,
                 )
                 self.queue_manager.publish(
-                    QueueAgentThoughtEvent(agent_thought_id=agent_thought.id), PublishFrom.APPLICATION_MANAGER
+                    QueueAgentThoughtEvent(agent_thought_id=agent_thought.id),
+                    PublishFrom.APPLICATION_MANAGER,
                 )
 
             # update prompt tool
             for prompt_tool in prompt_messages_tools:
-                self.update_prompt_message_tool(tool_instances[prompt_tool.name], prompt_tool)
+                self.update_prompt_message_tool(
+                    tool_instances[prompt_tool.name], prompt_tool
+                )
 
             iteration_step += 1
 
@@ -330,7 +373,9 @@ class FunctionCallAgentRunner(BaseAgentRunner):
             return True
         return False
 
-    def extract_tool_calls(self, llm_result_chunk: LLMResultChunk) -> list[tuple[str, str, dict[str, Any]]]:
+    def extract_tool_calls(
+        self, llm_result_chunk: LLMResultChunk
+    ) -> list[tuple[str, str, dict[str, Any]]]:
         """
         Extract tool calls from llm result chunk
 
@@ -353,7 +398,9 @@ class FunctionCallAgentRunner(BaseAgentRunner):
 
         return tool_calls
 
-    def extract_blocking_tool_calls(self, llm_result: LLMResult) -> list[tuple[str, str, dict[str, Any]]]:
+    def extract_blocking_tool_calls(
+        self, llm_result: LLMResult
+    ) -> list[tuple[str, str, dict[str, Any]]]:
         """
         Extract blocking tool calls from llm result
 
@@ -376,7 +423,9 @@ class FunctionCallAgentRunner(BaseAgentRunner):
 
         return tool_calls
 
-    def _init_system_message(self, prompt_template: str, prompt_messages: list[PromptMessage]) -> list[PromptMessage]:
+    def _init_system_message(
+        self, prompt_template: str, prompt_messages: list[PromptMessage]
+    ) -> list[PromptMessage]:
         """
         Initialize system message
         """
@@ -385,12 +434,18 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                 SystemPromptMessage(content=prompt_template),
             ]
 
-        if prompt_messages and not isinstance(prompt_messages[0], SystemPromptMessage) and prompt_template:
+        if (
+            prompt_messages
+            and not isinstance(prompt_messages[0], SystemPromptMessage)
+            and prompt_template
+        ):
             prompt_messages.insert(0, SystemPromptMessage(content=prompt_template))
 
         return prompt_messages or []
 
-    def _organize_user_query(self, query: str, prompt_messages: list[PromptMessage]) -> list[PromptMessage]:
+    def _organize_user_query(
+        self, query: str, prompt_messages: list[PromptMessage]
+    ) -> list[PromptMessage]:
         """
         Organize user query
         """
@@ -407,7 +462,9 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                 )
                 else None
             )
-            image_detail_config = image_detail_config or ImagePromptMessageContent.DETAIL.LOW
+            image_detail_config = (
+                image_detail_config or ImagePromptMessageContent.DETAIL.LOW
+            )
             for file in self.files:
                 prompt_message_contents.append(
                     file_manager.to_prompt_message_content(
@@ -422,7 +479,9 @@ class FunctionCallAgentRunner(BaseAgentRunner):
 
         return prompt_messages
 
-    def _clear_user_prompt_image_messages(self, prompt_messages: list[PromptMessage]) -> list[PromptMessage]:
+    def _clear_user_prompt_image_messages(
+        self, prompt_messages: list[PromptMessage]
+    ) -> list[PromptMessage]:
         """
         As for now, gpt supports both fc and vision at the first iteration.
         We need to remove the image messages from the prompt messages at the first iteration.
@@ -434,11 +493,15 @@ class FunctionCallAgentRunner(BaseAgentRunner):
                 if isinstance(prompt_message.content, list):
                     prompt_message.content = "\n".join(
                         [
-                            content.data
-                            if content.type == PromptMessageContentType.TEXT
-                            else "[image]"
-                            if content.type == PromptMessageContentType.IMAGE
-                            else "[file]"
+                            (
+                                content.data
+                                if content.type == PromptMessageContentType.TEXT
+                                else (
+                                    "[image]"
+                                    if content.type == PromptMessageContentType.IMAGE
+                                    else "[file]"
+                                )
+                            )
                             for content in prompt_message.content
                         ]
                     )
@@ -447,7 +510,9 @@ class FunctionCallAgentRunner(BaseAgentRunner):
 
     def _organize_prompt_messages(self):
         prompt_template = self.app_config.prompt_template.simple_prompt_template or ""
-        self.history_prompt_messages = self._init_system_message(prompt_template, self.history_prompt_messages)
+        self.history_prompt_messages = self._init_system_message(
+            prompt_template, self.history_prompt_messages
+        )
         query_prompt_messages = self._organize_user_query(self.query or "", [])
 
         self.history_prompt_messages = AgentHistoryPromptTransform(
@@ -457,7 +522,11 @@ class FunctionCallAgentRunner(BaseAgentRunner):
             memory=self.memory,
         ).get_prompt()
 
-        prompt_messages = [*self.history_prompt_messages, *query_prompt_messages, *self._current_thoughts]
+        prompt_messages = [
+            *self.history_prompt_messages,
+            *query_prompt_messages,
+            *self._current_thoughts,
+        ]
         if len(self._current_thoughts) != 0:
             # clear messages after the first iteration
             prompt_messages = self._clear_user_prompt_image_messages(prompt_messages)
